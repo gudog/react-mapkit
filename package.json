@@ -44,9 +44,7 @@
       "git add"
     ]
   },
-  "dependencies": {
-    "little-loader": "^0.2.0"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@babel/core": "^7.9.0",
     "@storybook/addon-actions": "^5.1.9",

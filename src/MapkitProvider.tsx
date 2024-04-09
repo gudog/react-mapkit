@@ -1,7 +1,6 @@
 /* global mapkit */
 
 import React from 'react'
-import load from 'little-loader'
 
 type MapkitContextType = {
   isInProvider: boolean
@@ -34,24 +33,45 @@ export const MapkitProvider: React.FC<ProviderProps> = ({
 
   React.useEffect(() => {
     if (!existingContext.isInProvider) {
-      load('https://cdn.apple-mapkit.com/mk/5.x.x/mapkit.js', () => {
-        const isCallback = tokenOrCallback.includes('/')
+        let script = document.createElement("script");
 
-        // init mapkit
-        mapkit.init({
-          authorizationCallback: (done) => {
-            if (isCallback) {
-              fetch(tokenOrCallback)
-                .then((res) => res.text())
-                .then(done)
-            } else {
-              done(tokenOrCallback)
-            }
-          },
-          language,
-        })
-        setContext({ mapkit, isInProvider: true })
-      })
+        // https://developer.apple.com/documentation/mapkitjs/loading_the_latest_version_of_mapkit_js
+        script.src = "https://cdn.apple-mapkit.com/mk/5.x.x/mapkit.js";
+        script.async = true;
+        script.crossOrigin = "anonymous";
+        script.setAttribute("data-callback", "initMapKit");
+        script.setAttribute("data-libraries", "full-map");
+
+        const onScriptLoad = () => {
+          const isCallback = tokenOrCallback.includes('/')
+  
+          // init mapkit
+          mapkit.init({
+            authorizationCallback: (done) => {
+              if (isCallback) {
+                fetch(tokenOrCallback)
+                  .then((res) => res.text())
+                  .then(done)
+              } else {
+                done(tokenOrCallback)
+              }
+            },
+            language,
+          })
+          setContext({ mapkit, isInProvider: true })
+        }
+
+        const onScriptError = () => {console.log("Mapkit load error")}
+
+        script.addEventListener("load", onScriptLoad);
+        script.addEventListener("error", onScriptError);
+
+        document.body.appendChild(script);
+
+        return () => {
+          script.removeEventListener("load", onScriptLoad);
+          script.removeEventListener("error", onScriptError);
+        };
     }
   }, [existingContext.isInProvider, tokenOrCallback, language])
 
